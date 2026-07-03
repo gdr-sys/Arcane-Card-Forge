@@ -10,7 +10,7 @@
 
 **Un Card Item Builder avanzato per giochi di ruolo, ottimizzato per D&D 5e**
 
-[🎮 Demo Live](#demo) • [✨ Funzionalità](#-funzionalità) • [🚀 Installazione](#-installazione) • [☕ Supporta il progetto](#-supporta-il-progetto)
+[✨ Funzionalità](#-funzionalità) • [🚀 Installazione](#-installazione) • [☕ Supporta il progetto](#-supporta-il-progetto)
 
 <img src="https://raw.githubusercontent.com/noemimarcolini/arcane-card-forge/main/preview.png" alt="Arcane Card Forge Preview" width="800">
 
