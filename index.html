@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark" data-lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcane Card Forge — D&D 5e Card Item Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=MedievalSharp&family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES & THEME SYSTEM
+   ══════════════════════════════════════════════ */
+:root {
+  --card-w: 252px;
+  --card-h: 352px;
+  --card-ratio: 0.714;
+  --card-print-w: 63.5mm;
+  --card-print-h: 88.9mm;
+  --rarity-common: #9ca3af;
+  --rarity-uncommon: #22c55e;
+  --rarity-rare: #3b82f6;
+  --rarity-very-rare: #a855f7;
+  --rarity-legendary: #f59e0b;
+  --rarity-artifact: #991b1b;
+  --tr: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0b0f19;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1f2937;
+  --bg-card: #0d1117;
+  --bg-panel: rgba(17, 24, 39, 0.85);
+  --bg-hover: rgba(55, 65, 81, 0.5);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: rgba(71, 85, 105, 0.4);
+  --border-glow: rgba(99, 102, 241, 0.3);
+  --accent: #818cf8;
+  --accent-dim: rgba(129, 140, 248, 0.15);
+  --shadow-card: 0 8px 32px rgba(0,0,0,0.5);
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(148, 163, 184, 0.1);
+  --canvas-bg: #080c14;
+  --canvas-dots: rgba(148, 163, 184, 0.06);
+  --input-bg: rgba(30, 41, 59, 0.8);
+  --neon-glow: 0 0 20px rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-panel: rgba(255, 255, 255, 0.9);
+  --bg-hover: rgba(241, 245, 249, 0.8);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: rgba(203, 213, 225, 0.6);
+  --border-glow: rgba(99, 102, 241, 0.2);
+  --accent: #6366f1;
+  --accent-dim: rgba(99, 102, 241, 0.08);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(203, 213, 225, 0.3);
+  --canvas-bg: #f1f5f9;
+  --canvas-dots: rgba(0, 0, 0, 0.04);
+  --input-bg: rgba(241, 245, 249, 0.9);
+  --neon-glow: 0 0 15px rgba(99, 102, 241, 0.1);
+}
+
+/* ══════════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  transition: background var(--tr), color var(--tr);
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ══════════════════════════════════════════════
+   TOP BAR
+   ══════════════════════════════════════════════ */
+.topbar {
+  height: 48px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  position: relative;
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.topbar-logo svg { width: 24px; height: 24px; }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.topbar-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--tr);
+  font-family: inherit;
+}
+.topbar-btn:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.topbar-btn.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.topbar-btn.primary:hover { filter: brightness(1.1); }
+.topbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN LAYOUT — SPLIT SCREEN
+   ══════════════════════════════════════════════ */
+.app-layout {
+  display: flex;
+  height: calc(100vh - 48px);
+}
+
+.panel-left {
+  width: 340px;
+  min-width: 300px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width var(--tr);
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+.panel-tab {
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all var(--tr);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: inherit;
+}
+.panel-tab:hover { color: var(--text-secondary); }
+.panel-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.p-section { margin-bottom: 14px; }
+.p-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.p-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+.p-section-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform var(--tr);
+}
+.p-section.collapsed .p-section-chevron { transform: rotate(-90deg); }
+.p-section.collapsed .p-section-body { display: none; }
+.p-section-body { padding: 8px 0; }
+
+.field { margin-bottom: 10px; }
+.field-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.field-input,
+.field-select,
+.field-textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: all var(--tr);
+  outline: none;
+}
+.field-input:focus,
+.field-select:focus,
+.field-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.field-textarea { resize: vertical; min-height: 60px; }
+.field-select { cursor: pointer; }
+.field-row { display: flex; gap: 8px; }
+.field-row .field { flex: 1; }
+
+.swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { border-color: var(--text-primary); box-shadow: 0 0 0 2px var(--accent); }
+
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toggle {
+  width: 36px;
+  height: 20px;
+  background: var(--border-color);
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--tr);
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--tr);
+}
+.toggle.on::after { transform: translateX(16px); }
+.toggle-label { font-size: 0.78rem; color: var(--text-secondary); }
+
+.btn-sm {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(129,140,248,0.2);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--tr);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-sm:hover { background: var(--accent); color: #fff; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--tr);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+.btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+/* Range slider */
+.range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-color);
+  outline: none;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.range-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.range-value {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── CANVAS AREA ── */
+.canvas-area {
+  flex: 1;
+  background: var(--canvas-bg);
+  background-image: radial-gradient(var(--canvas-dots) 1px, transparent 1px);
+  background-size: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: auto;
+  padding: 20px 24px 120px; /* bottom = tray 84 + footer 28 + 8 */
+}
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.card-face-toggle {
+  display: flex;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 3px;
+}
+.face-btn {
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--tr);
+  font-family: inherit;
+}
+.face-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.zoom-control label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.zoom-slider {
+  width: 80px;
+}
+
+.card-preview-wrapper {
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+}
+
+.card-preview-area {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* ══════════════════════════════════════════════
+   CARD STYLES
+   ══════════════════════════════════════════════ */
+.card-frame {
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--tr), border-color var(--tr);
+  flex-shrink: 0;
+  border: 3px solid var(--rarity-common);
+}
+.card-frame:hover {
+  box-shadow: var(--shadow-card), var(--neon-glow);
+}
+
+/* Border styles */
+.card-frame.border-solid { border-style: solid; }
+.card-frame.border-double { border-style: double; border-width: 4px; }
+.card-frame.border-groove { border-style: groove; border-width: 4px; }
+.card-frame.border-ridge { border-style: ridge; border-width: 4px; }
+.card-frame.border-ornate {
+  border-width: 6px;
+  border-image: linear-gradient(135deg, var(--border-color-val) 25%, transparent 25%, transparent 50%, var(--border-color-val) 50%, var(--border-color-val) 75%, transparent 75%) 1;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  z-index: 0;
+}
+[data-theme="light"] .card-bg {
+  background: linear-gradient(145deg, #fefce8 0%, #fef3c7 50%, #fde68a 100%);
+}
+
+.card-header {
+  position: relative;
+  z-index: 2;
+  padding: 10px 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  cursor: text;
+  outline: none;
+  min-height: 1.2em;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.2s;
+  line-height: 1.2;
+}
+.card-name:hover { border-bottom-color: rgba(255,255,255,0.3); }
+.card-name:focus { border-bottom-color: var(--accent); }
+[data-theme="light"] .card-name { color: #1e293b; text-shadow: none; }
+
+.card-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.65);
+}
+[data-theme="light"] .card-subtitle { color: rgba(0,0,0,0.5); }
+
+.card-attune {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.5rem;
+  transition: all 0.2s;
+}
+.card-attune.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.card-image-area {
+  position: relative;
+  z-index: 2;
+  height: 110px;
+  margin: 0 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: border-color 0.2s;
+}
+.card-image-area:hover { border-color: var(--accent); }
+
+/* Image wrapper: this div gets transformed for pan/zoom */
+.img-wrap {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  cursor: grab;
+  user-select: none;
+}
+.img-wrap:active { cursor: grabbing; }
+.img-wrap.dragging { transition: none !important; }
+.img-wrap img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* Image controls overlay */
+.image-controls {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+.card-image-area:hover .image-controls,
+.card-back-texture:hover > .image-controls { opacity: 1; }
+.image-controls input[type="range"] {
+  flex: 1;
+  height: 3px;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  outline: none;
+}
+.image-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.image-controls .ctrl-btn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-family: inherit;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.image-controls .ctrl-btn:hover { background: var(--accent); }
+.image-zoom-label {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.7);
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.card-image-placeholder {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.65rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.card-image-placeholder svg { width: 24px; height: 24px; opacity: 0.4; }
+
+/* Image help tooltip */
+.image-help {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.55rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 5;
+  white-space: nowrap;
+}
+.card-image-area:hover .image-help,
+.card-back-texture:hover > .image-help { opacity: 1; }
+
+.card-stats {
+  position: relative;
+  z-index: 2;
+  margin: 6px 10px;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+[data-theme="light"] .card-stats {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.1);
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  gap: 4px;
+}
+.stat-label {
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.58rem;
+  letter-spacing: 0.5px;
+  cursor: text;
+  outline: none;
+  min-width: 30px;
+  padding: 1px 2px;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.stat-label:hover { background: rgba(255,255,255,0.08); }
+.stat-label:focus { background: rgba(99,102,241,0.2); }
+[data-theme="light"] .stat-label { color: rgba(0,0,0,0.45); }
+
+.stat-value {
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.72rem;
+  cursor: text;
+  outline: none;
+  min-width: 20px;
+  text-align: right;
+  padding: 1px 3px;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.stat-value:hover { background: rgba(255,255,255,0.08); }
+.stat-value:focus { background: rgba(99,102,241,0.2); }
+[data-theme="light"] .stat-value { color: #1e293b; }
+
+.stat-remove {
+  width: 14px;
+  height: 14px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  cursor: pointer;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  opacity: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.stat-row:hover .stat-remove { opacity: 1; }
+.stat-remove:hover { background: rgba(239,68,68,0.3); color: #ef4444; }
+
+.stat-add-btn {
+  background: none;
+  border: 1px dashed rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.3);
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 2px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.stat-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.card-desc {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 4px 12px 10px;
+  overflow-y: auto;
+}
+.card-desc-text {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.8);
+  cursor: text;
+  outline: none;
+  min-height: 2em;
+}
+.card-desc-text:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.25);
+  font-style: italic;
+}
+[data-theme="light"] .card-desc-text { color: rgba(0,0,0,0.7); }
+[data-theme="light"] .card-desc-text:empty::before { color: rgba(0,0,0,0.25); }
+
+.dice-tag {
+  display: inline;
+  background: rgba(129,140,248,0.25);
+  color: #a5b4fc;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-family: 'Inter', monospace;
+  font-size: 0.65rem;
+}
+
+/* ── BACK CARD ── */
+.card-back-lore {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  position: relative;
+}
+.card-back-lore::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+  z-index: 0;
+}
+[data-theme="light"] .card-back-lore::before {
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%);
+}
+.back-lore-title {
+  position: relative;
+  z-index: 1;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+[data-theme="light"] .back-lore-title { color: #1e293b; border-bottom-color: rgba(0,0,0,0.1); }
+.back-lore-text {
+  position: relative;
+  z-index: 1;
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.68rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.7);
+  cursor: text;
+  outline: none;
+  flex: 1;
+  overflow-y: auto;
+}
+.back-lore-text:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.2);
+}
+[data-theme="light"] .back-lore-text { color: rgba(0,0,0,0.6); }
+
+/* Back texture mode */
+.card-back-texture {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.back-texture-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* Back image uses same .img-wrap pattern */
+.back-texture-bg .img-wrap {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  cursor: grab;
+  user-select: none;
+}
+.back-texture-bg .img-wrap:active { cursor: grabbing; }
+.back-texture-bg .img-wrap img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.back-texture-pattern {
+  position: absolute;
+  inset: 0;
+}
+.back-texture-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-emblem {
+  font-size: 3rem;
+  opacity: 0.3;
+}
+
+/* Pattern styles */
+.pattern-none { background: transparent; }
+.pattern-celtic {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, currentColor 8px, currentColor 9px),
+    repeating-linear-gradient(-45deg, transparent, transparent 8px, currentColor 8px, currentColor 9px);
+}
+.pattern-diamond {
+  background-image: 
+    linear-gradient(45deg, currentColor 25%, transparent 25%),
+    linear-gradient(-45deg, currentColor 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, currentColor 75%),
+    linear-gradient(-45deg, transparent 75%, currentColor 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.pattern-waves {
+  background-image: repeating-radial-gradient(circle at 0 0, transparent, transparent 8px, currentColor 8px, currentColor 9px);
+  background-size: 18px 18px;
+}
+.pattern-runes {
+  background-image: 
+    linear-gradient(0deg, currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.pattern-hexagon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='currentColor' fill-opacity='1' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9z'/%3E%3C/svg%3E");
+  background-size: 20px;
+}
+.pattern-scales {
+  background-image: radial-gradient(ellipse 60% 40% at 50% 50%, transparent 70%, currentColor 71%, currentColor 73%, transparent 74%);
+  background-size: 16px 12px;
+}
+.pattern-triangles {
+  background-image: 
+    linear-gradient(30deg, currentColor 12%, transparent 12.5%, transparent 87%, currentColor 87.5%, currentColor),
+    linear-gradient(150deg, currentColor 12%, transparent 12.5%, transparent 87%, currentColor 87.5%, currentColor),
+    linear-gradient(30deg, currentColor 12%, transparent 12.5%, transparent 87%, currentColor 87.5%, currentColor),
+    linear-gradient(150deg, currentColor 12%, transparent 12.5%, transparent 87%, currentColor 87.5%, currentColor);
+  background-size: 16px 28px;
+  background-position: 0 0, 0 0, 8px 14px, 8px 14px;
+}
+.pattern-circuit {
+  background-image: 
+    linear-gradient(currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px),
+    linear-gradient(currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px);
+  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+.pattern-damask {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath fill='currentColor' fill-opacity='1' d='M20 0c5.5 0 10 4.5 10 10s-4.5 10-10 10S10 15.5 10 10 14.5 0 20 0zm0 6c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 14c5.5 0 10 4.5 10 10s-4.5 10-10 10-10-4.5-10-10 4.5-10 10-10zm0 6c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z'/%3E%3C/svg%3E");
+  background-size: 30px;
+}
+
+/* ══════════════════════════════════════════════
+   CARD TRAY
+   ══════════════════════════════════════════════ */
+.card-tray {
+  position: absolute;
+  bottom: 28px; /* leave room for footer below */
+  left: 0;
+  right: 0;
+  height: 84px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  overflow-x: auto;
+  z-index: 50;
+}
+.tray-card {
+  width: 48px;
+  height: 66px;
+  border-radius: 5px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.tray-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.tray-card:hover { border-color: var(--accent); }
+
+.tray-card-check {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  color: transparent;
+  z-index: 2;
+  transition: all 0.15s;
+}
+.tray-card-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tray-actions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.tray-card:hover .tray-actions { opacity: 1; }
+
+.tray-action-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  z-index: 2;
+  transition: all 0.15s;
+}
+.tray-action-btn.del { background: rgba(239,68,68,0.8); color: #fff; }
+.tray-action-btn.dup { background: rgba(99,102,241,0.8); color: #fff; }
+
+.tray-card-mini {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  text-align: center;
+  overflow: hidden;
+}
+.tray-card-mini-name {
+  font-size: 0.45rem;
+  font-weight: 600;
+  line-height: 1.1;
+  word-break: break-all;
+}
+
+.tray-add {
+  width: 48px;
+  height: 66px;
+  border-radius: 5px;
+  border: 2px dashed var(--border-color);
+  background: transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+.tray-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ══════════════════════════════════════════════
+   MODALS
+   ══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--tr);
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+  position: relative;
+}
+.modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.gallery-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-item:hover { border-color: var(--accent); transform: scale(1.03); }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-item svg { width: 40px; height: 40px; color: var(--text-muted); }
+
+.url-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.url-input-row input { flex: 1; }
+
+.drop-zone-modal {
+  border: 2px dashed var(--border-color);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.drop-zone-modal.dragover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* Emblem selector */
+.emblem-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.emblem-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.emblem-item:hover { border-color: var(--accent); }
+.emblem-item.active { border-color: var(--accent); background: var(--accent-dim); }
+
+/* ══════════════════════════════════════════════
+   PRINT STYLES
+   ══════════════════════════════════════════════ */
+.print-page { display: none; }
+
+@media print {
+  *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  
+  body { overflow: visible !important; background: white !important; }
+  .topbar, .app-layout, .modal-overlay { display: none !important; }
+  
+  .print-page {
+    display: block !important;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm;
+    page-break-after: always;
+    background: white !important;
+    position: relative;
+  }
+  .print-page:last-child { page-break-after: auto; }
+  
+  .print-grid {
+    display: grid;
+    grid-template-columns: repeat(3, var(--card-print-w));
+    grid-auto-rows: var(--card-print-h);
+    gap: 3mm;
+    justify-content: center;
+  }
+  
+  .print-card {
+    width: var(--card-print-w);
+    height: var(--card-print-h);
+    border-radius: 3mm;
+    overflow: hidden;
+    border: 0.5mm solid #333;
+    position: relative;
+    background: white;
+  }
+
+  .print-page-label {
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+    margin-bottom: 3mm;
+    font-family: sans-serif;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   FONT PRESETS
+   ══════════════════════════════════════════════ */
+.font-classic .card-name { font-family: 'Cinzel', serif; }
+.font-modern .card-name { font-family: 'Inter', sans-serif; }
+.font-gothic .card-name { font-family: 'MedievalSharp', 'Cinzel Decorative', cursive; }
+
+/* Number micro-input */
+.micro-input {
+  width: 60px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: 'Inter', monospace;
+  text-align: center;
+  outline: none;
+}
+.micro-input:focus { border-color: var(--accent); }
+
+.calib-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.calib-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+.calib-unit {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* Color input inline */
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.color-input-wrap input[type="color"] {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+.color-input-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+.color-input-wrap input[type="color"]::-webkit-color-swatch { border-radius: 3px; border: none; }
+
+/* Template dropdown */
+.template-dropdown {
+  position: relative;
+}
+.template-dropdown-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.15s;
+}
+.template-dropdown-btn:hover { border-color: var(--accent); }
+.template-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.template-dropdown.open .template-dropdown-menu { display: block; }
+.template-option {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+.template-option:hover { background: var(--accent-dim); }
+.template-option-rarity {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+@media (max-width: 900px) {
+  .panel-left { width: 100%; position: fixed; z-index: 80; bottom: 84px; top: auto; height: 45%; border-right: none; border-top: 1px solid var(--border-color); }
+  .app-layout { flex-direction: column; }
+  .canvas-area { padding-bottom: 180px; }
+}
+
+/* ══════════════════════════════════════════════
+   FOOTER CREDITS — fixed at the very bottom
+   ══════════════════════════════════════════════ */
+.app-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 51;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.footer-credit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  animation: fadeInUp 1s ease-out 0.5s both;
+}
+.footer-credit .sparkle {
+  display: inline-block;
+  animation: sparkle 2.5s ease-in-out infinite;
+}
+.footer-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-credit a:hover {
+  color: var(--text-primary);
+}
+.footer-heart {
+  color: #ef4444;
+  display: inline-block;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+.kofi-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ff5f5f 0%, #ff7b7b 100%);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 20px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(255,95,95,0.25);
+  transition: all 0.3s ease;
+  animation: fadeInUp 1s ease-out 0.7s both;
+}
+.kofi-btn:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(255,95,95,0.4);
+}
+.kofi-btn svg {
+  width: 14px;
+  height: 14px;
+  animation: wiggle 2s ease-in-out infinite;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.15); }
+  35% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@media print {
+  .app-footer { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ TOP BAR ═══════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    <span>Arcane Card Forge</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="topbar-btn" onclick="toggleLang()" id="btnLang">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
+      <span data-i18n="lang_toggle">IT → EN</span>
+    </button>
+    <div class="topbar-divider"></div>
+    <button class="topbar-btn" onclick="toggleTheme()" id="btnTheme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span data-i18n="theme_toggle">Dark</span>
+    </button>
+    <div class="topbar-divider"></div>
+    <button class="topbar-btn" onclick="exportJSON()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      <span data-i18n="export">Esporta</span>
+    </button>
+    <button class="topbar-btn" onclick="importJSON()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      <span data-i18n="import">Importa</span>
+    </button>
+    <div class="topbar-divider"></div>
+    <button class="topbar-btn primary" onclick="openPrintDialog()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span data-i18n="print">Stampa PDF</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════ MAIN APP ═══════════════════════════════ -->
+<div class="app-layout">
+  
+  <!-- ── LEFT PANEL ── -->
+  <aside class="panel-left" id="panelLeft">
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="layout" data-i18n="tab_layout">Layout</button>
+      <button class="panel-tab" data-tab="graphics" data-i18n="tab_graphics">Grafica</button>
+      <button class="panel-tab" data-tab="back" data-i18n="tab_back">Retro</button>
+      <button class="panel-tab" data-tab="texts" data-i18n="tab_texts">Testi</button>
+      <button class="panel-tab" data-tab="custom" data-i18n="tab_custom">Custom</button>
+      <button class="panel-tab" data-tab="print" data-i18n="tab_print">Stampa</button>
+    </div>
+    
+    <div class="panel-content" id="panelContent">
+      
+      <!-- TAB: LAYOUT -->
+      <div class="tab-pane active" id="tab-layout">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_templates">Template Rapidi</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="template-dropdown" id="templateDropdown">
+              <button class="template-dropdown-btn" onclick="toggleTemplateDropdown()">
+                <span data-i18n="select_template">Seleziona template...</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="template-dropdown-menu" id="templateMenu"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_rarity">Rarità & Tipo</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_category">Categoria</label>
+              <select class="field-select" id="selCategory" onchange="updateCard()">
+                <option value="weapon">Arma / Weapon</option>
+                <option value="armor">Armatura / Armor</option>
+                <option value="potion">Pozione / Potion</option>
+                <option value="wondrous">Ogg. Meraviglioso / Wondrous</option>
+                <option value="ring">Anello / Ring</option>
+                <option value="scroll">Pergamena / Scroll</option>
+                <option value="wand">Bacchetta / Wand</option>
+                <option value="custom">Personalizzato / Custom</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_rarity">Rarità</label>
+              <select class="field-select" id="selRarity" onchange="updateCard()">
+                <option value="common">Comune / Common</option>
+                <option value="uncommon">Non Comune / Uncommon</option>
+                <option value="rare" selected>Raro / Rare</option>
+                <option value="very-rare">Molto Raro / Very Rare</option>
+                <option value="legendary">Leggendario / Legendary</option>
+                <option value="artifact">Artefatto / Artifact</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_border_style">Stile Bordo</label>
+              <select class="field-select" id="selBorderStyle" onchange="updateCard()">
+                <option value="solid">Solido / Solid</option>
+                <option value="double">Doppio / Double</option>
+                <option value="groove">Inciso / Groove</option>
+                <option value="ridge">Rilievo / Ridge</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="toggle-wrap">
+                <div class="toggle" id="togAttune" onclick="toggleAttune()"></div>
+                <span class="toggle-label" data-i18n="lbl_attunement">Richiede Sintonia</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: GRAPHICS -->
+      <div class="tab-pane" id="tab-graphics" style="display:none">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_typography">Tipografia</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_font_preset">Preset Font Titolo</label>
+              <select class="field-select" id="selFont" onchange="updateCard()">
+                <option value="classic">Classico / Elegant</option>
+                <option value="modern">Moderno / Clean</option>
+                <option value="gothic">Gotico / Runic</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_colors">Colori</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_text_color">Colore Testo</label>
+              <div class="color-input-wrap">
+                <input type="color" id="cpText" value="#ffffff" onchange="setTextColor(this.value)">
+                <div class="swatch-grid" id="textColorSwatches"></div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_bg_style">Sfondo Carta</label>
+              <select class="field-select" id="selBgType" onchange="updateCard()">
+                <option value="gradient">Gradient Preset</option>
+                <option value="solid">Colore Solido</option>
+              </select>
+            </div>
+            <div class="field" id="bgGradientField">
+              <label class="field-label">Gradient</label>
+              <select class="field-select" id="selBgGradient" onchange="updateCard()">
+                <option value="night">Night Ocean</option>
+                <option value="forest">Dark Forest</option>
+                <option value="fire">Ember Glow</option>
+                <option value="ice">Frozen</option>
+                <option value="arcane">Arcane Purple</option>
+                <option value="gold">Golden Dawn</option>
+                <option value="blood">Blood Moon</option>
+                <option value="parchment">Parchment</option>
+              </select>
+            </div>
+            <div class="field" id="bgSolidField" style="display:none">
+              <label class="field-label">Colore</label>
+              <div class="color-input-wrap">
+                <input type="color" id="cpBg" value="#1a1a2e" onchange="setBgColor(this.value)">
+                <div class="swatch-grid" id="bgColorSwatches"></div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_border_color">Colore Bordo (override)</label>
+              <div class="color-input-wrap">
+                <input type="color" id="cpBorder" value="#3b82f6" onchange="setBorderColor(this.value)">
+                <button class="btn-sm" onclick="resetBorderColor()" data-i18n="btn_auto">Auto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_image">Immagine Fronte</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <button class="btn-sm" onclick="openImageModal('front')" style="width:100%;justify-content:center;" data-i18n="btn_choose_image">Scegli Immagine / Galleria</button>
+            <div style="margin-top:8px">
+              <button class="btn-sm" onclick="removeImage('front')" style="width:100%;justify-content:center;background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2);" data-i18n="btn_remove_image">Rimuovi Immagine</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: BACK (RETRO) -->
+      <div class="tab-pane" id="tab-back" style="display:none">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_back_mode">Modalità Retro</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <select class="field-select" id="selBackMode" onchange="updateCard()">
+                <option value="lore">Lore / Storia</option>
+                <option value="texture">Pattern / Texture</option>
+                <option value="image">Immagine Custom</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Lore options -->
+        <div class="p-section" id="backLoreOptions">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_lore_style">Stile Lore</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_lore_title">Titolo Lore</label>
+              <input class="field-input" id="inputLoreTitle" oninput="updateCard()" placeholder="La Leggenda narra...">
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_lore_text">Testo Lore</label>
+              <textarea class="field-textarea" id="inputLoreText" rows="4" oninput="updateCard()" placeholder="Forgiata nelle viscere..."></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Texture options -->
+        <div class="p-section" id="backTextureOptions" style="display:none">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_pattern">Pattern</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_pattern_type">Tipo Pattern</label>
+              <select class="field-select" id="selPattern" onchange="updateCard()">
+                <option value="none">Nessuno / None</option>
+                <option value="celtic">Celtic Knots</option>
+                <option value="diamond">Diamond Grid</option>
+                <option value="waves">Arcane Waves</option>
+                <option value="runes">Runic Grid</option>
+                <option value="hexagon">Hexagon</option>
+                <option value="scales">Dragon Scales</option>
+                <option value="triangles">Triangles</option>
+                <option value="circuit">Arcane Circuit</option>
+                <option value="damask">Damask</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_pattern_color">Colore Pattern</label>
+              <div class="color-input-wrap">
+                <input type="color" id="cpPattern" value="#3b82f6" onchange="updateCard()">
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_pattern_opacity">Opacità Pattern</label>
+              <div class="range-wrap">
+                <input type="range" class="range-slider" id="rangePatternOpacity" min="5" max="50" value="15" onchange="updateCard()" oninput="updatePatternOpacityLabel()">
+                <span class="range-value" id="patternOpacityVal">15%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-section" id="backEmblemOptions" style="display:none">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_emblem">Emblema Centrale</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_emblem">Simbolo</label>
+              <div class="emblem-grid" id="emblemGrid"></div>
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_emblem_opacity">Opacità Emblema</label>
+              <div class="range-wrap">
+                <input type="range" class="range-slider" id="rangeEmblemOpacity" min="10" max="60" value="30" onchange="updateCard()" oninput="updateEmblemOpacityLabel()">
+                <span class="range-value" id="emblemOpacityVal">30%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Image options -->
+        <div class="p-section" id="backImageOptions" style="display:none">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_back_image">Immagine Retro</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <button class="btn-sm" onclick="openImageModal('back')" style="width:100%;justify-content:center;" data-i18n="btn_choose_back_image">Scegli Immagine Retro</button>
+            <div style="margin-top:8px">
+              <button class="btn-sm" onclick="removeImage('back')" style="width:100%;justify-content:center;background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2);" data-i18n="btn_remove_image">Rimuovi</button>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label class="field-label" data-i18n="lbl_back_overlay">Overlay Pattern (su immagine)</label>
+              <div class="toggle-wrap">
+                <div class="toggle" id="togBackOverlay" onclick="toggleBackOverlay()"></div>
+                <span class="toggle-label" data-i18n="lbl_show_pattern">Mostra Pattern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_back_bg">Sfondo Retro</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <select class="field-select" id="selBackBgType" onchange="updateCard()">
+                <option value="same">Stesso del Fronte</option>
+                <option value="gradient">Gradient Diverso</option>
+                <option value="solid">Colore Solido</option>
+              </select>
+            </div>
+            <div class="field" id="backBgGradientField" style="display:none">
+              <label class="field-label">Gradient</label>
+              <select class="field-select" id="selBackBgGradient" onchange="updateCard()">
+                <option value="night">Night Ocean</option>
+                <option value="forest">Dark Forest</option>
+                <option value="fire">Ember Glow</option>
+                <option value="ice">Frozen</option>
+                <option value="arcane">Arcane Purple</option>
+                <option value="gold">Golden Dawn</option>
+                <option value="blood">Blood Moon</option>
+                <option value="parchment">Parchment</option>
+              </select>
+            </div>
+            <div class="field" id="backBgSolidField" style="display:none">
+              <div class="color-input-wrap">
+                <input type="color" id="cpBackBg" value="#1a1a2e" onchange="updateCard()">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: TEXTS -->
+      <div class="tab-pane" id="tab-texts" style="display:none">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_front_text">Testi Fronte</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_name">Nome Oggetto</label>
+              <input class="field-input" id="inputName" oninput="updateCard()" placeholder="Spada Fiammeggiante">
+            </div>
+            <div class="field">
+              <label class="field-label" data-i18n="lbl_description">Descrizione / Effetti</label>
+              <textarea class="field-textarea" id="inputDesc" rows="4" oninput="updateCard()" placeholder="[1d6] danni da fuoco..."></textarea>
+              <div style="margin-top:4px;font-size:0.65rem;color:var(--text-muted)" data-i18n="hint_dice">Usa [XdY] per evidenziare i dadi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: CUSTOM -->
+      <div class="tab-pane" id="tab-custom" style="display:none">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_stats">Statistiche</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:8px" data-i18n="hint_stats">Modifica direttamente sulla carta cliccando etichette/valori.</p>
+            <div id="statsListPanel"></div>
+            <button class="btn-sm" onclick="addStat()" style="width:100%;justify-content:center;margin-top:6px" data-i18n="btn_add_stat">+ Aggiungi Statistica</button>
+          </div>
+        </div>
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_properties">Proprietà</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <div id="propsPanel"></div>
+            <div class="field" style="margin-top:6px">
+              <input class="field-input" id="inputNewProp" placeholder="Finesse, Light, Versatile..." onkeydown="if(event.key==='Enter')addProp()">
+            </div>
+            <button class="btn-sm" onclick="addProp()" style="width:100%;justify-content:center;" data-i18n="btn_add_prop">+ Aggiungi Proprietà</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: PRINT -->
+      <div class="tab-pane" id="tab-print" style="display:none">
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_calibration">Calibrazione Stampante</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:10px" data-i18n="hint_calibration">Regola l'offset del retro per compensare il disallineamento.</p>
+            <div class="calib-row">
+              <span class="calib-label">Offset X (retro)</span>
+              <input type="number" class="micro-input" id="calibX" value="0" step="0.5">
+              <span class="calib-unit">mm</span>
+            </div>
+            <div class="calib-row">
+              <span class="calib-label">Offset Y (retro)</span>
+              <input type="number" class="micro-input" id="calibY" value="0" step="0.5">
+              <span class="calib-unit">mm</span>
+            </div>
+          </div>
+        </div>
+        <div class="p-section">
+          <div class="p-section-head" onclick="toggleSection(this)">
+            <span class="p-section-title" data-i18n="sec_print_selection">Selezione Stampa</span>
+            <svg class="p-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="p-section-body">
+            <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:8px" data-i18n="hint_select_cards">Usa le checkbox nel vassoio in basso.</p>
+            <div id="printSelectionList"></div>
+            <button class="btn-primary" onclick="doPrint()" style="margin-top:12px" data-i18n="btn_print_now">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Stampa Fronte/Retro
+            </button>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </aside>
+  
+  <!-- ── CANVAS ── -->
+  <main class="canvas-area" id="canvasArea">
+    
+    <div class="canvas-toolbar">
+      <div class="card-face-toggle">
+        <button class="face-btn active" data-face="front" onclick="switchFace('front')" data-i18n="face_front">Fronte</button>
+        <button class="face-btn" data-face="back" onclick="switchFace('back')" data-i18n="face_back">Retro</button>
+        <button class="face-btn" data-face="both" onclick="switchFace('both')" data-i18n="face_both">Entrambi</button>
+      </div>
+      <div class="zoom-control">
+        <label>Zoom</label>
+        <input type="range" class="range-slider zoom-slider" id="zoomSlider" min="50" max="150" value="100" oninput="updateZoom()">
+        <span class="range-value" id="zoomVal">100%</span>
+      </div>
+    </div>
+    
+    <div class="card-preview-wrapper" id="cardPreviewWrapper">
+      <div class="card-preview-area" id="cardPreviewArea"></div>
+    </div>
+    
+    <!-- ── CARD TRAY ── -->
+    <div class="card-tray" id="cardTray"></div>
+
+    <!-- ── FOOTER (very bottom, below tray) ── -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-credit">
+          <span class="sparkle">✨</span>
+          <span>Idea e progetto di</span>
+          <a href="mailto:noemi.marcolini@gmail.com"><strong>Noemi Marcolini</strong></a>
+          <span class="footer-heart">♥</span>
+        </div>
+        <a href="https://ko-fi.com/noemimarcolini" target="_blank" rel="noopener" class="kofi-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311z"/>
+          </svg>
+          <span>Offrimi un caffè!</span>
+        </a>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<!-- ═══════════════════════ IMAGE MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="imageModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeImageModal()">×</button>
+    <h3 class="modal-title" id="imageModalTitle" data-i18n="modal_image_title">Scegli Immagine</h3>
+    
+    <div class="drop-zone-modal" id="dropZone" data-i18n="drop_zone">
+      Trascina un'immagine qui o clicca per caricare
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+    
+    <div class="url-input-row">
+      <input class="field-input" id="inputImageUrl" placeholder="URL immagine...">
+      <button class="btn-sm" onclick="loadImageUrl()" data-i18n="btn_load">Carica</button>
+    </div>
+    
+    <h4 style="margin-top:16px;font-size:0.8rem;color:var(--text-secondary)" data-i18n="gallery_presets">Galleria Preset</h4>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</div>
+
+<!-- Print Container -->
+<div id="printContainer"></div>
+
+<!-- footer moved inside canvas -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   ARCANE CARD FORGE — MAIN APPLICATION v2
+   ══════════════════════════════════════════════════════════════ */
+
+// ─── i18n ───
+const I18N = {
+  it: {
+    lang_toggle: 'IT → EN', theme_toggle: 'Dark',
+    export: 'Esporta', import: 'Importa', print: 'Stampa PDF',
+    tab_layout: 'Layout', tab_graphics: 'Grafica', tab_back: 'Retro', tab_texts: 'Testi', tab_custom: 'Custom', tab_print: 'Stampa',
+    sec_templates: 'Template Rapidi', sec_rarity: 'Rarità & Tipo', sec_typography: 'Tipografia', sec_colors: 'Colori',
+    sec_image: 'Immagine Fronte', sec_front_text: 'Testi Fronte', sec_stats: 'Statistiche', sec_properties: 'Proprietà',
+    sec_calibration: 'Calibrazione', sec_print_selection: 'Selezione Stampa',
+    sec_back_mode: 'Modalità Retro', sec_lore_style: 'Stile Lore', sec_pattern: 'Pattern', sec_emblem: 'Emblema',
+    sec_back_image: 'Immagine Retro', sec_back_bg: 'Sfondo Retro',
+    face_front: 'Fronte', face_back: 'Retro', face_both: 'Entrambi',
+    btn_add_stat: '+ Aggiungi Statistica', btn_add_prop: '+ Aggiungi Proprietà',
+    btn_choose_image: 'Scegli Immagine', btn_remove_image: 'Rimuovi', btn_auto: 'Auto',
+    btn_print_now: 'Stampa Fronte/Retro', btn_load: 'Carica',
+    select_template: 'Seleziona template...',
+    modal_image_title: 'Scegli Immagine', drop_zone: "Trascina un'immagine qui",
+    hint_dice: 'Usa [XdY] per evidenziare i dadi',
+    hint_stats: 'Modifica direttamente sulla carta.',
+    hint_calibration: "Offset retro per stampante.",
+    click_edit: 'Clicca per modificare...',
+    desc_placeholder: 'Descrivi gli effetti...',
+    lore_placeholder: 'Scrivi la storia...',
+    print_fronts: 'Pagina Fronte', print_backs: 'Pagina Retro',
+  },
+  en: {
+    lang_toggle: 'EN → IT', theme_toggle: 'Dark',
+    export: 'Export', import: 'Import', print: 'Print PDF',
+    tab_layout: 'Layout', tab_graphics: 'Graphics', tab_back: 'Back', tab_texts: 'Texts', tab_custom: 'Custom', tab_print: 'Print',
+    sec_templates: 'Quick Templates', sec_rarity: 'Rarity & Type', sec_typography: 'Typography', sec_colors: 'Colors',
+    sec_image: 'Front Image', sec_front_text: 'Front Texts', sec_stats: 'Statistics', sec_properties: 'Properties',
+    sec_calibration: 'Calibration', sec_print_selection: 'Print Selection',
+    sec_back_mode: 'Back Mode', sec_lore_style: 'Lore Style', sec_pattern: 'Pattern', sec_emblem: 'Emblem',
+    sec_back_image: 'Back Image', sec_back_bg: 'Back Background',
+    face_front: 'Front', face_back: 'Back', face_both: 'Both',
+    btn_add_stat: '+ Add Stat', btn_add_prop: '+ Add Property',
+    btn_choose_image: 'Choose Image', btn_remove_image: 'Remove', btn_auto: 'Auto',
+    btn_print_now: 'Print Front/Back', btn_load: 'Load',
+    select_template: 'Select template...',
+    modal_image_title: 'Choose Image', drop_zone: 'Drag an image here',
+    hint_dice: 'Use [XdY] to highlight dice',
+    hint_stats: 'Edit directly on the card.',
+    hint_calibration: 'Back offset for printer.',
+    click_edit: 'Click to edit...',
+    desc_placeholder: 'Describe the effects...',
+    lore_placeholder: 'Write the story...',
+    print_fronts: 'Front Page', print_backs: 'Back Page',
+  }
+};
+
+const RARITY_MAP = {
+  common:      { color: '#9ca3af', label_it: 'Comune',      label_en: 'Common' },
+  uncommon:    { color: '#22c55e', label_it: 'Non Comune',  label_en: 'Uncommon' },
+  rare:        { color: '#3b82f6', label_it: 'Raro',        label_en: 'Rare' },
+  'very-rare': { color: '#a855f7', label_it: 'Molto Raro',  label_en: 'Very Rare' },
+  legendary:   { color: '#f59e0b', label_it: 'Leggendario', label_en: 'Legendary' },
+  artifact:    { color: '#991b1b', label_it: 'Artefatto',   label_en: 'Artifact' },
+};
+
+const CATEGORY_MAP = {
+  weapon:   { label_it: 'Arma',   label_en: 'Weapon' },
+  armor:    { label_it: 'Armatura', label_en: 'Armor' },
+  potion:   { label_it: 'Pozione',  label_en: 'Potion' },
+  wondrous: { label_it: 'Ogg. Meraviglioso', label_en: 'Wondrous' },
+  ring:     { label_it: 'Anello',   label_en: 'Ring' },
+  scroll:   { label_it: 'Pergamena', label_en: 'Scroll' },
+  wand:     { label_it: 'Bacchetta', label_en: 'Wand' },
+  custom:   { label_it: 'Custom',   label_en: 'Custom' },
+};
+
+const GRADIENTS = {
+  night: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+  forest: 'linear-gradient(145deg, #1a2f1a 0%, #0d3320 50%, #0a4a2a 100%)',
+  fire: 'linear-gradient(145deg, #2d1810 0%, #4a1c10 50%, #6b2010 100%)',
+  ice: 'linear-gradient(145deg, #1a2a3a 0%, #1e3a5f 50%, #2a4a7a 100%)',
+  arcane: 'linear-gradient(145deg, #1e1a2e 0%, #2d1f4e 50%, #3d2a6e 100%)',
+  gold: 'linear-gradient(145deg, #2a2010 0%, #3a2a10 50%, #4a3510 100%)',
+  blood: 'linear-gradient(145deg, #2a1015 0%, #3a1520 50%, #4a1a25 100%)',
+  parchment: 'linear-gradient(145deg, #f5f0e6 0%, #e8dcc8 50%, #d4c4a8 100%)',
+};
+
+const EMBLEMS = ['⟡', '⚔', '🛡', '⚗', '💎', '📜', '🔮', '⚡', '🔥', '❄', '🌙', '☀', '✦', '❖', '◈', '◆'];
+
+const GALLERY_IMAGES = [
+  { url: 'https://images.pexels.com/photos/19249701/pexels-photo-19249701.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Warrior' },
+  { url: 'https://images.pexels.com/photos/37007723/pexels-photo-37007723.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Katana' },
+  { url: 'https://images.pexels.com/photos/3151984/pexels-photo-3151984.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Potions' },
+  { url: 'https://images.pexels.com/photos/7979084/pexels-photo-7979084.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Wands' },
+  { url: 'https://images.pexels.com/photos/29716784/pexels-photo-29716784.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Potion' },
+  { url: 'https://images.pexels.com/photos/35269743/pexels-photo-35269743.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=400&w=400', label: 'Shield' },
+];
+
+const TEMPLATES = [
+  { name_it: 'Pozione di Cura', name_en: 'Healing Potion', category: 'potion', rarity: 'common', stats: [{label:'Cura/Heal',value:'2d4+2'}], desc_it: 'Bevi per recuperare [2d4+2] punti ferita.', desc_en: 'Drink to recover [2d4+2] hit points.' },
+  { name_it: 'Spada Lunga +1', name_en: 'Longsword +1', category: 'weapon', rarity: 'uncommon', stats: [{label:'Danno/Damage',value:'1d8+1'},{label:'Peso/Weight',value:'3 lb'}], props: ['Versatile'], desc_it: '+1 ai tiri per colpire e ai danni.', desc_en: '+1 to attack and damage rolls.' },
+  { name_it: 'Armatura di Mithral', name_en: 'Mithral Armor', category: 'armor', rarity: 'uncommon', stats: [{label:'CA/AC',value:'+1'},{label:'Peso/Weight',value:'20 lb'}], desc_it: 'Non impone svantaggio a Furtività.', desc_en: 'No disadvantage on Stealth.' },
+  { name_it: 'Anello di Protezione', name_en: 'Ring of Protection', category: 'ring', rarity: 'rare', stats: [{label:'CA/AC',value:'+1'},{label:'TS/Saves',value:'+1'}], desc_it: '+1 CA e tiri salvezza (sintonia).', desc_en: '+1 AC and saving throws (attunement).', attunement: true },
+  { name_it: 'Bacchetta di Palle di Fuoco', name_en: 'Wand of Fireballs', category: 'wand', rarity: 'rare', stats: [{label:'Cariche/Charges',value:'7'},{label:'DC',value:'15'}], desc_it: 'Lancia Palla di Fuoco ([8d6]).', desc_en: 'Cast Fireball ([8d6]).', attunement: true },
+  { name_it: 'Mantello dell\'Invisibilità', name_en: 'Cloak of Invisibility', category: 'wondrous', rarity: 'legendary', stats: [{label:'Durata/Duration',value:'2 ore'}], desc_it: 'Diventi invisibile indossandolo.', desc_en: 'Become invisible while wearing it.', attunement: true },
+  { name_it: 'Spada Vorpal', name_en: 'Vorpal Sword', category: 'weapon', rarity: 'legendary', stats: [{label:'Danno/Damage',value:'2d6+3'},{label:'Critico/Crit',value:'Decapita'}], props: ['Finesse'], desc_it: 'Su 20 naturale, decapita il nemico!', desc_en: 'On natural 20, decapitates!', attunement: true },
+  { name_it: 'Sfera di Annientamento', name_en: 'Sphere of Annihilation', category: 'wondrous', rarity: 'artifact', stats: [{label:'Raggio/Radius',value:'2 ft'},{label:'DC',value:'25'}], desc_it: 'Distrugge tutto ciò che tocca.', desc_en: 'Destroys everything it touches.' },
+];
+
+const TEXT_COLORS = ['#ffffff','#f1f5f9','#fbbf24','#a78bfa','#34d399','#f87171','#60a5fa','#fb923c'];
+const BG_COLORS = ['#1a1a2e','#16213e','#0f3460','#1e1b4b','#1c1917','#14532d','#4c0519','#172554'];
+
+// ─── STATE ───
+let currentLang = 'it';
+let currentTheme = 'dark';
+let currentFace = 'front';
+let activeCardIndex = 0;
+let imageModalTarget = 'front'; // 'front' or 'back'
+let zoomLevel = 100;
+
+function defaultCard() {
+  return {
+    id: Date.now() + Math.random(),
+    name: '',
+    category: 'weapon',
+    rarity: 'rare',
+    borderStyle: 'solid',
+    attunement: false,
+    imageUrl: '',
+    imageZoom: 100,
+    imageOffsetX: 0,
+    imageOffsetY: 0,
+    stats: [
+      { label: 'Danno', value: '1d8' },
+      { label: 'Peso', value: '3 lb' },
+      { label: 'Valore', value: '50 gp' },
+    ],
+    properties: ['Finesse'],
+    description: '',
+    fontPreset: 'classic',
+    textColor: '#ffffff',
+    bgType: 'gradient',
+    bgGradient: 'night',
+    bgSolid: '#1a1a2e',
+    borderColorOverride: '',
+    // Back
+    backMode: 'lore',
+    backImageUrl: '',
+    backImageZoom: 100,
+    backImageOffsetX: 0,
+    backImageOffsetY: 0,
+    backPattern: 'celtic',
+    backPatternColor: '#3b82f6',
+    backPatternOpacity: 15,
+    backEmblem: '⟡',
+    backEmblemOpacity: 30,
+    backOverlayPattern: false,
+    backBgType: 'same',
+    backBgGradient: 'night',
+    backBgSolid: '#1a1a2e',
+    loreTitle: '',
+    loreText: '',
+    selected: true,
+  };
+}
+
+let cards = [defaultCard()];
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('arcane_cards_v2');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Migrate old cards: ensure new image fields exist
+        parsed.forEach(c => {
+          if (c.imageZoom === undefined) c.imageZoom = 100;
+          if (c.imageOffsetX === undefined) c.imageOffsetX = 0;
+          if (c.imageOffsetY === undefined) c.imageOffsetY = 0;
+          if (c.backImageZoom === undefined) c.backImageZoom = 100;
+          if (c.backImageOffsetX === undefined) c.backImageOffsetX = 0;
+          if (c.backImageOffsetY === undefined) c.backImageOffsetY = 0;
+        });
+        cards = parsed;
+      }
+    }
+  } catch(e) {}
+  
+  setupTabs();
+  setupDropZone();
+  renderGallery();
+  renderColorSwatches();
+  renderEmblemGrid();
+  renderTemplateMenu();
+  renderAll();
+  applyI18n();
+});
+
+function save() {
+  try { localStorage.setItem('arcane_cards_v2', JSON.stringify(cards)); } catch(e) {}
+}
+
+function cc() { return cards[activeCardIndex] || cards[0]; }
+
+// ─── TABS ───
+function setupTabs() {
+  document.querySelectorAll('.panel-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+      document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+    });
+  });
+}
+
+function toggleSection(head) {
+  head.parentElement.classList.toggle('collapsed');
+}
+
+// ─── THEME / LANG ───
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'it' ? 'en' : 'it';
+  document.documentElement.setAttribute('data-lang', currentLang);
+  applyI18n();
+  renderAll();
+}
+
+function applyI18n() {
+  const dict = I18N[currentLang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key]) el.textContent = dict[key];
+  });
+}
+
+// ─── FACE / ZOOM ───
+function switchFace(face) {
+  currentFace = face;
+  document.querySelectorAll('.face-btn').forEach(b => b.classList.toggle('active', b.dataset.face === face));
+  renderCardPreview();
+}
+
+function updateZoom() {
+  zoomLevel = parseInt(document.getElementById('zoomSlider').value);
+  document.getElementById('zoomVal').textContent = zoomLevel + '%';
+  document.getElementById('cardPreviewWrapper').style.transform = `scale(${zoomLevel/100})`;
+}
+
+// ─── RENDER ───
+function renderAll() {
+  syncPanelToCard();
+  renderCardPreview();
+  renderTray();
+}
+
+function syncPanelToCard() {
+  const c = cc();
+  document.getElementById('selCategory').value = c.category;
+  document.getElementById('selRarity').value = c.rarity;
+  document.getElementById('selBorderStyle').value = c.borderStyle || 'solid';
+  document.getElementById('togAttune').classList.toggle('on', c.attunement);
+  document.getElementById('selBackMode').value = c.backMode;
+  document.getElementById('selPattern').value = c.backPattern;
+  document.getElementById('cpPattern').value = c.backPatternColor || '#3b82f6';
+  document.getElementById('rangePatternOpacity').value = c.backPatternOpacity || 15;
+  document.getElementById('patternOpacityVal').textContent = (c.backPatternOpacity || 15) + '%';
+  document.getElementById('rangeEmblemOpacity').value = c.backEmblemOpacity || 30;
+  document.getElementById('emblemOpacityVal').textContent = (c.backEmblemOpacity || 30) + '%';
+  document.getElementById('togBackOverlay').classList.toggle('on', c.backOverlayPattern);
+  document.getElementById('selFont').value = c.fontPreset;
+  document.getElementById('inputName').value = c.name;
+  document.getElementById('inputDesc').value = c.description;
+  document.getElementById('inputLoreTitle').value = c.loreTitle;
+  document.getElementById('inputLoreText').value = c.loreText;
+  document.getElementById('cpText').value = c.textColor || '#ffffff';
+  document.getElementById('selBgType').value = c.bgType || 'gradient';
+  document.getElementById('selBgGradient').value = c.bgGradient || 'night';
+  document.getElementById('cpBg').value = c.bgSolid || '#1a1a2e';
+  document.getElementById('selBackBgType').value = c.backBgType || 'same';
+  document.getElementById('selBackBgGradient').value = c.backBgGradient || 'night';
+  document.getElementById('cpBackBg').value = c.backBgSolid || '#1a1a2e';
+  if (c.borderColorOverride) document.getElementById('cpBorder').value = c.borderColorOverride;
+  
+  // Show/hide based on back mode
+  const bm = c.backMode;
+  document.getElementById('backLoreOptions').style.display = bm === 'lore' ? 'block' : 'none';
+  document.getElementById('backTextureOptions').style.display = (bm === 'texture' || (bm === 'image' && c.backOverlayPattern)) ? 'block' : 'none';
+  document.getElementById('backEmblemOptions').style.display = bm === 'texture' ? 'block' : 'none';
+  document.getElementById('backImageOptions').style.display = bm === 'image' ? 'block' : 'none';
+  
+  // Show/hide bg fields
+  document.getElementById('bgGradientField').style.display = c.bgType === 'gradient' ? 'block' : 'none';
+  document.getElementById('bgSolidField').style.display = c.bgType === 'solid' ? 'block' : 'none';
+  document.getElementById('backBgGradientField').style.display = c.backBgType === 'gradient' ? 'block' : 'none';
+  document.getElementById('backBgSolidField').style.display = c.backBgType === 'solid' ? 'block' : 'none';
+  
+  renderStatsPanel();
+  renderPropsPanel();
+  renderEmblemGrid();
+}
+
+function updateCard() {
+  const c = cc();
+  c.category = document.getElementById('selCategory').value;
+  c.rarity = document.getElementById('selRarity').value;
+  c.borderStyle = document.getElementById('selBorderStyle').value;
+  c.backMode = document.getElementById('selBackMode').value;
+  c.backPattern = document.getElementById('selPattern').value;
+  c.backPatternColor = document.getElementById('cpPattern').value;
+  c.backPatternOpacity = parseInt(document.getElementById('rangePatternOpacity').value);
+  c.backEmblemOpacity = parseInt(document.getElementById('rangeEmblemOpacity').value);
+  c.fontPreset = document.getElementById('selFont').value;
+  c.name = document.getElementById('inputName').value;
+  c.description = document.getElementById('inputDesc').value;
+  c.loreTitle = document.getElementById('inputLoreTitle').value;
+  c.loreText = document.getElementById('inputLoreText').value;
+  c.bgType = document.getElementById('selBgType').value;
+  c.bgGradient = document.getElementById('selBgGradient').value;
+  c.backBgType = document.getElementById('selBackBgType').value;
+  c.backBgGradient = document.getElementById('selBackBgGradient').value;
+  c.backBgSolid = document.getElementById('cpBackBg').value;
+  syncPanelToCard();
+  renderCardPreview();
+  renderTray();
+  save();
+}
+
+function toggleAttune() {
+  cc().attunement = !cc().attunement;
+  document.getElementById('togAttune').classList.toggle('on', cc().attunement);
+  renderCardPreview(); save();
+}
+
+function toggleBackOverlay() {
+  cc().backOverlayPattern = !cc().backOverlayPattern;
+  document.getElementById('togBackOverlay').classList.toggle('on', cc().backOverlayPattern);
+  syncPanelToCard();
+  renderCardPreview(); save();
+}
+
+function updatePatternOpacityLabel() {
+  document.getElementById('patternOpacityVal').textContent = document.getElementById('rangePatternOpacity').value + '%';
+}
+function updateEmblemOpacityLabel() {
+  document.getElementById('emblemOpacityVal').textContent = document.getElementById('rangeEmblemOpacity').value + '%';
+}
+
+// ─── COLORS ───
+function renderColorSwatches() {
+  document.getElementById('textColorSwatches').innerHTML = TEXT_COLORS.map(c => `<div class="swatch" style="background:${c}" onclick="setTextColor('${c}')"></div>`).join('');
+  document.getElementById('bgColorSwatches').innerHTML = BG_COLORS.map(c => `<div class="swatch" style="background:${c}" onclick="setBgColor('${c}')"></div>`).join('');
+}
+
+function setTextColor(color) { cc().textColor = color; document.getElementById('cpText').value = color; renderCardPreview(); save(); }
+function setBgColor(color) { cc().bgSolid = color; document.getElementById('cpBg').value = color; renderCardPreview(); save(); }
+function setBorderColor(color) { cc().borderColorOverride = color; renderCardPreview(); save(); }
+function resetBorderColor() { cc().borderColorOverride = ''; renderCardPreview(); save(); }
+
+// ─── EMBLEMS ───
+function renderEmblemGrid() {
+  const c = cc();
+  document.getElementById('emblemGrid').innerHTML = EMBLEMS.map(e => `<div class="emblem-item ${c.backEmblem === e ? 'active' : ''}" onclick="setEmblem('${e}')">${e}</div>`).join('');
+}
+function setEmblem(e) { cc().backEmblem = e; renderEmblemGrid(); renderCardPreview(); save(); }
+
+// ─── STATS ───
+function addStat() {
+  cc().stats.push({ label: 'Nuova', value: '—' });
+  renderAll(); save();
+}
+function removeStat(i) { cc().stats.splice(i, 1); renderAll(); save(); }
+function renderStatsPanel() {
+  const c = cc();
+  document.getElementById('statsListPanel').innerHTML = c.stats.map((s, i) => `
+    <div class="field-row" style="margin-bottom:4px">
+      <input class="field-input" value="${escHtml(s.label)}" oninput="cc().stats[${i}].label=this.value;renderCardPreview();save()" style="font-size:0.75rem">
+      <input class="field-input" value="${escHtml(s.value)}" oninput="cc().stats[${i}].value=this.value;renderCardPreview();save()" style="font-size:0.75rem;max-width:80px">
+      <button class="btn-sm" onclick="removeStat(${i})" style="padding:4px 6px;flex-shrink:0;background:rgba(239,68,68,0.1);color:#ef4444;">✕</button>
+    </div>
+  `).join('');
+}
+
+// ─── PROPERTIES ───
+function addProp() {
+  const input = document.getElementById('inputNewProp');
+  if (!input.value.trim()) return;
+  cc().properties.push(input.value.trim());
+  input.value = '';
+  renderAll(); save();
+}
+function removeProp(i) { cc().properties.splice(i, 1); renderAll(); save(); }
+function renderPropsPanel() {
+  document.getElementById('propsPanel').innerHTML = cc().properties.map((p, i) => `
+    <div style="display:inline-flex;align-items:center;gap:4px;background:var(--accent-dim);padding:3px 8px;border-radius:12px;margin:2px;font-size:0.72rem;color:var(--accent)">
+      ${escHtml(p)}<span onclick="removeProp(${i})" style="cursor:pointer;opacity:0.6">✕</span>
+    </div>
+  `).join('');
+}
+
+// ─── TEMPLATES ───
+function renderTemplateMenu() {
+  document.getElementById('templateMenu').innerHTML = TEMPLATES.map((t, i) => `
+    <div class="template-option" onclick="applyTemplate(${i})">
+      <span>${currentLang === 'it' ? t.name_it : t.name_en}</span>
+      <span class="template-option-rarity" style="background:${RARITY_MAP[t.rarity].color}"></span>
+    </div>
+  `).join('');
+}
+
+function toggleTemplateDropdown() {
+  document.getElementById('templateDropdown').classList.toggle('open');
+}
+
+function applyTemplate(i) {
+  const t = TEMPLATES[i];
+  const c = cc();
+  c.name = currentLang === 'it' ? t.name_it : t.name_en;
+  c.category = t.category;
+  c.rarity = t.rarity;
+  c.stats = t.stats.map(s => ({...s}));
+  c.properties = t.props ? [...t.props] : [];
+  c.description = currentLang === 'it' ? t.desc_it : t.desc_en;
+  c.attunement = t.attunement || false;
+  document.getElementById('templateDropdown').classList.remove('open');
+  renderAll(); save();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.template-dropdown')) {
+    document.getElementById('templateDropdown').classList.remove('open');
+  }
+});
+
+// ─── CARD PREVIEW ───
+function renderCardPreview() {
+  const area = document.getElementById('cardPreviewArea');
+  const c = cc();
+  const rarity = RARITY_MAP[c.rarity];
+  const borderColor = c.borderColorOverride || rarity.color;
+  const catLabel = CATEGORY_MAP[c.category]['label_' + currentLang];
+  const rarLabel = rarity['label_' + currentLang];
+  const fontClass = 'font-' + c.fontPreset;
+  const textColor = c.textColor || '#ffffff';
+  
+  // Background style
+  let bgStyle = '';
+  if (c.bgType === 'gradient') {
+    bgStyle = `background:${GRADIENTS[c.bgGradient] || GRADIENTS.night}`;
+  } else {
+    bgStyle = `background:${c.bgSolid || '#1a1a2e'}`;
+  }
+  
+  // Back background style
+  let backBgStyle = bgStyle;
+  if (c.backBgType === 'gradient') {
+    backBgStyle = `background:${GRADIENTS[c.backBgGradient] || GRADIENTS.night}`;
+  } else if (c.backBgType === 'solid') {
+    backBgStyle = `background:${c.backBgSolid || '#1a1a2e'}`;
+  }
+  
+  function formatDesc(text) {
+    if (!text) return '';
+    return escHtml(text).replace(/\[(\d+d\d+(?:[+\-]\d+)?)\]/g, '<span class="dice-tag">$1</span>');
+  }
+  
+  const propsLine = c.properties.length > 0 
+    ? `<div style="font-size:0.58rem;color:${borderColor};margin-top:2px;padding:0 12px;position:relative;z-index:2;font-weight:600">${c.properties.join(' · ')}</div>` 
+    : '';
+  
+  const showFront = currentFace === 'front' || currentFace === 'both';
+  const showBack = currentFace === 'back' || currentFace === 'both';
+  
+  let html = '';
+  
+  if (showFront) {
+    html += `
+    <div class="card-frame ${fontClass} border-${c.borderStyle}" style="border-color:${borderColor};--border-color-val:${borderColor}">
+      <div class="card-inner">
+        <div class="card-bg" style="${bgStyle}"></div>
+        <div class="card-header">
+          <div class="card-name" contenteditable="true" style="color:${textColor}"
+               oninput="cc().name=this.textContent;document.getElementById('inputName').value=this.textContent;renderTray();save()"
+          >${escHtml(c.name) || `<span style="opacity:0.3;font-style:italic">${I18N[currentLang].click_edit}</span>`}</div>
+          <div class="card-subtitle">
+            <span style="color:${borderColor}">${catLabel}, ${rarLabel}</span>
+            <div class="card-attune ${c.attunement ? 'active' : ''}" onclick="toggleAttune()" style="border-color:${borderColor}">
+              ${c.attunement ? '⟡' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="card-image-area" id="frontImageArea" ${!c.imageUrl ? `onclick="openImageModal('front')"` : ''}>
+          ${c.imageUrl 
+            ? `<div class="img-wrap" id="frontImgWrap"
+                    style="transform: scale(${(c.imageZoom || 100)/100}) translate(${c.imageOffsetX || 0}px, ${c.imageOffsetY || 0}px)"
+                    onmousedown="startImageDrag(event, 'front')"
+                    ondblclick="openImageModal('front')">
+                 <img src="${c.imageUrl}" alt="card" onerror="this.parentElement.style.display='none'">
+               </div>
+               <div class="image-help">Trascina · Scroll zoom · Doppio click cambia</div>
+               <div class="image-controls" onclick="event.stopPropagation()">
+                 <button class="ctrl-btn" onclick="adjustImageZoom('front', -5)" title="Zoom Out">−</button>
+                 <input type="range" min="20" max="250" value="${c.imageZoom || 100}" 
+                        oninput="setImageZoom('front', this.value)">
+                 <button class="ctrl-btn" onclick="adjustImageZoom('front', 5)" title="Zoom In">+</button>
+                 <span class="image-zoom-label" id="frontZoomLbl">${c.imageZoom || 100}%</span>
+                 <button class="ctrl-btn" onclick="resetImagePosition('front')" title="Reset">↺</button>
+                 <button class="ctrl-btn" onclick="openImageModal('front')" title="Change">⋯</button>
+               </div>` 
+            : `<div class="card-image-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                <span style="font-size:0.55rem">${I18N[currentLang].btn_choose_image}</span>
+              </div>`
+          }
+        </div>
+        <div class="card-stats" style="border-color:${borderColor}22">
+          ${c.stats.map((s, i) => `
+            <div class="stat-row">
+              <span class="stat-label" contenteditable="true" style="color:${borderColor}"
+                    oninput="cc().stats[${i}].label=this.textContent;save()">${escHtml(s.label)}</span>
+              <span class="stat-value" contenteditable="true" style="color:${textColor}"
+                    oninput="cc().stats[${i}].value=this.textContent;save()">${escHtml(s.value)}</span>
+              <button class="stat-remove" onclick="removeStat(${i});renderAll()">✕</button>
+            </div>
+          `).join('')}
+          <button class="stat-add-btn" onclick="addStat()">+</button>
+        </div>
+        ${propsLine}
+        <div class="card-desc">
+          <div class="card-desc-text" contenteditable="true" style="color:${textColor}cc"
+               data-placeholder="${I18N[currentLang].desc_placeholder}"
+               oninput="cc().description=this.textContent;document.getElementById('inputDesc').value=this.textContent;save()"
+          >${formatDesc(c.description)}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+  
+  if (showBack) {
+    if (c.backMode === 'lore') {
+      html += `
+      <div class="card-frame border-${c.borderStyle}" style="border-color:${borderColor}">
+        <div class="card-back-lore" style="${backBgStyle}">
+          <div class="back-lore-title" style="color:${borderColor};border-bottom-color:${borderColor}33">${escHtml(c.loreTitle) || 'Lore'}</div>
+          <div class="back-lore-text" contenteditable="true"
+               data-placeholder="${I18N[currentLang].lore_placeholder}"
+               oninput="cc().loreText=this.textContent;document.getElementById('inputLoreText').value=this.textContent;save()"
+          >${escHtml(c.loreText)}</div>
+        </div>
+      </div>`;
+    } else if (c.backMode === 'texture') {
+      html += `
+      <div class="card-frame border-${c.borderStyle}" style="border-color:${borderColor}">
+        <div class="card-back-texture">
+          <div class="back-texture-bg" style="${backBgStyle}"></div>
+          <div class="back-texture-pattern pattern-${c.backPattern}" style="color:${c.backPatternColor};opacity:${c.backPatternOpacity/100}"></div>
+          <div class="back-texture-center">
+            <div class="back-emblem" style="color:${borderColor};opacity:${c.backEmblemOpacity/100}">${c.backEmblem}</div>
+          </div>
+        </div>
+      </div>`;
+    } else if (c.backMode === 'image') {
+      html += `
+      <div class="card-frame border-${c.borderStyle}" style="border-color:${borderColor}">
+        <div class="card-back-texture" id="backImageArea" ${!c.backImageUrl ? `onclick="openImageModal('back')"` : ''}>
+          ${c.backImageUrl 
+            ? `<div class="back-texture-bg">
+                 <div class="img-wrap" id="backImgWrap"
+                      style="transform: scale(${(c.backImageZoom || 100)/100}) translate(${c.backImageOffsetX || 0}px, ${c.backImageOffsetY || 0}px)"
+                      onmousedown="startImageDrag(event, 'back')"
+                      ondblclick="openImageModal('back')">
+                   <img src="${c.backImageUrl}" alt="back" onerror="this.parentElement.style.display='none'">
+                 </div>
+               </div>
+               <div class="image-help">Trascina · Scroll zoom · Doppio click cambia</div>
+               <div class="image-controls" onclick="event.stopPropagation()">
+                 <button class="ctrl-btn" onclick="adjustImageZoom('back', -5)" title="Zoom Out">−</button>
+                 <input type="range" min="20" max="250" value="${c.backImageZoom || 100}" 
+                        oninput="setImageZoom('back', this.value)">
+                 <button class="ctrl-btn" onclick="adjustImageZoom('back', 5)" title="Zoom In">+</button>
+                 <span class="image-zoom-label" id="backZoomLbl">${c.backImageZoom || 100}%</span>
+                 <button class="ctrl-btn" onclick="resetImagePosition('back')" title="Reset">↺</button>
+                 <button class="ctrl-btn" onclick="openImageModal('back')" title="Change">⋯</button>
+               </div>`
+            : `<div class="back-texture-bg" style="${backBgStyle}"></div>
+               <div class="back-texture-center"><div style="color:${textColor};opacity:0.3;font-size:0.7rem;text-align:center">${I18N[currentLang].btn_choose_image}</div></div>`
+          }
+          ${c.backOverlayPattern && c.backImageUrl ? `<div class="back-texture-pattern pattern-${c.backPattern}" style="color:${c.backPatternColor};opacity:${c.backPatternOpacity/100}"></div>` : ''}
+        </div>
+      </div>`;
+    }
+  }
+  
+  area.innerHTML = html;
+}
+
+// ─── TRAY ───
+function renderTray() {
+  const tray = document.getElementById('cardTray');
+  let html = '';
+  cards.forEach((c, i) => {
+    const rarColor = RARITY_MAP[c.rarity].color;
+    const isActive = i === activeCardIndex;
+    html += `
+    <div class="tray-card ${isActive ? 'active' : ''}" style="border-color:${isActive ? 'var(--accent)' : rarColor}40;background:linear-gradient(135deg,${rarColor}15,${rarColor}05)" onclick="selectCard(${i})">
+      <div class="tray-card-check ${c.selected ? 'checked' : ''}" onclick="event.stopPropagation();toggleCardSelect(${i})">✓</div>
+      <div class="tray-actions">
+        <button class="tray-action-btn dup" onclick="event.stopPropagation();duplicateCard(${i})" title="Duplica">⧉</button>
+        ${cards.length > 1 ? `<button class="tray-action-btn del" onclick="event.stopPropagation();deleteCard(${i})" title="Elimina">✕</button>` : ''}
+      </div>
+      <div class="tray-card-mini">
+        <div class="tray-card-mini-name" style="color:${rarColor}">${escHtml(c.name) || '#' + (i+1)}</div>
+      </div>
+    </div>`;
+  });
+  html += `<button class="tray-add" onclick="addCard()">+</button>`;
+  tray.innerHTML = html;
+}
+
+function selectCard(i) { activeCardIndex = i; renderAll(); }
+function addCard() { cards.push(defaultCard()); activeCardIndex = cards.length - 1; renderAll(); save(); }
+function deleteCard(i) {
+  if (cards.length <= 1) return;
+  cards.splice(i, 1);
+  if (activeCardIndex >= cards.length) activeCardIndex = cards.length - 1;
+  renderAll(); save();
+}
+function duplicateCard(i) {
+  const clone = JSON.parse(JSON.stringify(cards[i]));
+  clone.id = Date.now() + Math.random();
+  clone.name = clone.name + ' (copy)';
+  cards.splice(i + 1, 0, clone);
+  activeCardIndex = i + 1;
+  renderAll(); save();
+}
+function toggleCardSelect(i) { cards[i].selected = !cards[i].selected; renderTray(); save(); }
+
+// ─── IMAGE MODAL ───
+function openImageModal(target) {
+  imageModalTarget = target;
+  document.getElementById('imageModalTitle').textContent = target === 'front' 
+    ? I18N[currentLang].modal_image_title 
+    : (currentLang === 'it' ? 'Immagine Retro' : 'Back Image');
+  document.getElementById('imageModal').classList.add('open');
+}
+function closeImageModal() {
+  document.getElementById('imageModal').classList.remove('open');
+}
+
+function renderGallery() {
+  let html = GALLERY_IMAGES.map(img => `
+    <div class="gallery-item" onclick="setCardImage('${img.url}')" title="${img.label}">
+      <img src="${img.url}" alt="${img.label}" loading="lazy">
+    </div>
+  `).join('');
+  document.getElementById('galleryGrid').innerHTML = html;
+}
+
+function setCardImage(url) {
+  const c = cc();
+  if (imageModalTarget === 'front') {
+    c.imageUrl = url;
+    // Reset position when loading new image
+    c.imageZoom = 100;
+    c.imageOffsetX = 0;
+    c.imageOffsetY = 0;
+  } else {
+    c.backImageUrl = url;
+    c.backImageZoom = 100;
+    c.backImageOffsetX = 0;
+    c.backImageOffsetY = 0;
+  }
+  closeImageModal();
+  renderCardPreview(); save();
+}
+
+function loadImageUrl() {
+  const url = document.getElementById('inputImageUrl').value.trim();
+  if (url) { setCardImage(url); document.getElementById('inputImageUrl').value = ''; }
+}
+
+function removeImage(target) {
+  if (target === 'front') cc().imageUrl = '';
+  else cc().backImageUrl = '';
+  renderCardPreview(); save();
+}
+
+// ─── DROP ZONE ───
+function setupDropZone() {
+  const dz = document.getElementById('dropZone');
+  const fi = document.getElementById('fileInput');
+  
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleImageFile(file);
+  });
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) handleImageFile(file);
+}
+
+function handleImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    setCardImage(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── EXPORT / IMPORT ───
+function exportJSON() {
+  const data = JSON.stringify(cards, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'arcane-cards.json';
+  a.click();
+}
+
+function importJSON() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (Array.isArray(data) && data.length > 0) {
+          cards = data;
+          activeCardIndex = 0;
+          renderAll(); save();
+        }
+      } catch(err) { alert('Invalid JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ─── PRINT ───
+function openPrintDialog() {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="print"]').classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-print').style.display = 'block';
+  renderPrintSelection();
+}
+
+function renderPrintSelection() {
+  document.getElementById('printSelectionList').innerHTML = cards.map((c, i) => {
+    const r = RARITY_MAP[c.rarity];
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:0.78rem">
+      <input type="checkbox" ${c.selected ? 'checked' : ''} onchange="cards[${i}].selected=this.checked;renderTray();save()">
+      <span style="color:${r.color}">●</span>
+      <span>${escHtml(c.name) || 'Card #' + (i+1)}</span>
+    </div>`;
+  }).join('');
+}
+
+function doPrint() {
+  const selected = cards.filter(c => c.selected);
+  if (!selected.length) { alert('Select at least one card!'); return; }
+  
+  const calibX = parseFloat(document.getElementById('calibX').value) || 0;
+  const calibY = parseFloat(document.getElementById('calibY').value) || 0;
+  const cols = 3;
+  
+  const container = document.getElementById('printContainer');
+  let html = '';
+  
+  // Page 1: Fronts
+  html += `<div class="print-page"><div class="print-page-label">${I18N[currentLang].print_fronts}</div><div class="print-grid">`;
+  selected.forEach(c => { html += buildPrintFront(c); });
+  html += `</div></div>`;
+  
+  // Page 2: Backs (mirrored rows)
+  const rows = [];
+  for (let i = 0; i < selected.length; i += cols) {
+    const row = selected.slice(i, i + cols);
+    while (row.length < cols) row.push(null);
+    rows.push(row.reverse());
+  }
+  
+  html += `<div class="print-page"><div class="print-page-label">${I18N[currentLang].print_backs}</div><div class="print-grid" style="margin-left:${calibX}mm;margin-top:${calibY}mm">`;
+  rows.forEach(row => {
+    row.forEach(c => {
+      if (c) html += buildPrintBack(c);
+      else html += `<div class="print-card" style="border:none"></div>`;
+    });
+  });
+  html += `</div></div>`;
+  
+  container.innerHTML = html;
+  setTimeout(() => window.print(), 300);
+}
+
+function buildPrintFront(c) {
+  const rc = RARITY_MAP[c.rarity].color;
+  const bc = c.borderColorOverride || rc;
+  const catLabel = CATEGORY_MAP[c.category]['label_' + currentLang];
+  const rarLabel = RARITY_MAP[c.rarity]['label_' + currentLang];
+  const tc = c.textColor || '#ffffff';
+  let bgStyle = c.bgType === 'gradient' ? `background:${GRADIENTS[c.bgGradient]}` : `background:${c.bgSolid}`;
+  
+  function fmtDesc(t) {
+    if (!t) return '';
+    return escHtml(t).replace(/\[(\d+d\d+(?:[+\-]\d+)?)\]/g, '<span style="background:rgba(129,140,248,0.25);color:#818cf8;padding:0 3px;border-radius:2px;font-weight:600;font-size:0.6rem">$1</span>');
+  }
+  
+  let fontFamily = "'Cinzel', serif";
+  if (c.fontPreset === 'modern') fontFamily = "'Inter', sans-serif";
+  if (c.fontPreset === 'gothic') fontFamily = "'MedievalSharp', cursive";
+  
+  return `<div class="print-card" style="border-color:${bc}">
+    <div style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;${bgStyle}"></div>
+      <div style="position:relative;z-index:1;padding:2.5mm 3mm 1.5mm">
+        <div style="font-family:${fontFamily};font-size:2.8mm;font-weight:700;color:${tc};line-height:1.2">${escHtml(c.name) || '—'}</div>
+        <div style="font-size:1.8mm;color:${bc};text-transform:uppercase;letter-spacing:0.5px;margin-top:0.5mm">
+          ${catLabel}, ${rarLabel}${c.attunement ? ' ⟡' : ''}
+        </div>
+      </div>
+      ${c.imageUrl ? `<div style="position:relative;z-index:1;height:28mm;margin:0 2.5mm;border-radius:1.5mm;overflow:hidden"><div style="position:absolute;inset:0;transform-origin:center center;transform:scale(${(c.imageZoom||100)/100}) translate(${c.imageOffsetX||0}px,${c.imageOffsetY||0}px)"><img src="${c.imageUrl}" style="width:100%;height:100%;object-fit:cover;display:block"></div></div>` : ''}
+      <div style="position:relative;z-index:1;margin:1.5mm 2.5mm;padding:1.5mm 2mm;background:rgba(0,0,0,0.3);border-radius:1.5mm;border:0.2mm solid ${bc}22">
+        ${c.stats.map(s => `<div style="display:flex;justify-content:space-between;font-size:2mm;margin-bottom:0.3mm"><span style="color:${bc};font-weight:600;text-transform:uppercase;font-size:1.7mm">${escHtml(s.label)}</span><span style="color:${tc}">${escHtml(s.value)}</span></div>`).join('')}
+      </div>
+      ${c.properties.length ? `<div style="position:relative;z-index:1;font-size:1.7mm;color:${bc};font-weight:600;padding:0 3mm">${c.properties.join(' · ')}</div>` : ''}
+      <div style="position:relative;z-index:1;flex:1;padding:1mm 3mm 2.5mm;font-family:'Crimson Pro',serif;font-size:2mm;line-height:1.45;color:${tc}cc;overflow:hidden">${fmtDesc(c.description)}</div>
+    </div>
+  </div>`;
+}
+
+function buildPrintBack(c) {
+  const rc = RARITY_MAP[c.rarity].color;
+  const bc = c.borderColorOverride || rc;
+  let backBgStyle = c.bgType === 'gradient' ? `background:${GRADIENTS[c.bgGradient]}` : `background:${c.bgSolid}`;
+  if (c.backBgType === 'gradient') backBgStyle = `background:${GRADIENTS[c.backBgGradient]}`;
+  else if (c.backBgType === 'solid') backBgStyle = `background:${c.backBgSolid}`;
+  
+  if (c.backMode === 'lore') {
+    return `<div class="print-card" style="border-color:${bc}">
+      <div style="width:100%;height:100%;padding:4mm 3.5mm;position:relative;${backBgStyle}">
+        <div style="font-family:'Cinzel',serif;font-size:2.4mm;font-weight:700;color:${bc};border-bottom:0.3mm solid ${bc}33;padding-bottom:1.5mm;margin-bottom:2mm">${escHtml(c.loreTitle) || 'Lore'}</div>
+        <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:2mm;line-height:1.5;color:rgba(255,255,255,0.7);overflow:hidden">${escHtml(c.loreText)}</div>
+      </div>
+    </div>`;
+  } else if (c.backMode === 'texture') {
+    return `<div class="print-card" style="border-color:${bc}">
+      <div style="width:100%;height:100%;position:relative;${backBgStyle}">
+        <div class="back-texture-pattern pattern-${c.backPattern}" style="color:${c.backPatternColor};position:absolute;inset:0;opacity:${c.backPatternOpacity/100}"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <div style="font-size:8mm;color:${bc};opacity:${c.backEmblemOpacity/100}">${c.backEmblem}</div>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    return `<div class="print-card" style="border-color:${bc}">
+      <div style="width:100%;height:100%;position:relative;overflow:hidden">
+        ${c.backImageUrl 
+          ? `<div style="position:absolute;inset:0;transform-origin:center center;transform:scale(${(c.backImageZoom||100)/100}) translate(${c.backImageOffsetX||0}px,${c.backImageOffsetY||0}px)"><img src="${c.backImageUrl}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` 
+          : `<div style="width:100%;height:100%;${backBgStyle}"></div>`}
+        ${c.backOverlayPattern ? `<div class="back-texture-pattern pattern-${c.backPattern}" style="color:${c.backPatternColor};position:absolute;inset:0;opacity:${c.backPatternOpacity/100}"></div>` : ''}
+      </div>
+    </div>`;
+  }
+}
+
+// ─── IMAGE PAN & ZOOM ───
+// Uses wrapper-div pattern: .img-wrap gets transform: scale() translate()
+// The <img> inside always has width/height 100% with object-fit:cover
+// So at scale(1) = image fills area, scale(0.5) = zoomed out, scale(2) = zoomed in
+
+let isDragging = false;
+let dragTarget = null;    // 'front' | 'back'
+let dragStartX = 0;
+let dragStartY = 0;
+let dragInitOffX = 0;
+let dragInitOffY = 0;
+
+function getWrap(target) {
+  return document.getElementById(target === 'front' ? 'frontImgWrap' : 'backImgWrap');
+}
+
+function startImageDrag(e, target) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  
+  isDragging = true;
+  dragTarget = target;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  
+  const c = cc();
+  if (target === 'front') {
+    dragInitOffX = c.imageOffsetX || 0;
+    dragInitOffY = c.imageOffsetY || 0;
+  } else {
+    dragInitOffX = c.backImageOffsetX || 0;
+    dragInitOffY = c.backImageOffsetY || 0;
+  }
+  
+  const wrap = getWrap(target);
+  if (wrap) wrap.classList.add('dragging');
+  
+  document.addEventListener('mousemove', onImageDrag);
+  document.addEventListener('mouseup', onImageDragEnd);
+}
+
+function onImageDrag(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  
+  const c = cc();
+  const zoom = dragTarget === 'front' ? (c.imageZoom || 100) : (c.backImageZoom || 100);
+  const scale = zoom / 100;
+  
+  // Pan delta (divide by scale so movement feels natural at all zoom levels)
+  const dx = (e.clientX - dragStartX) / scale;
+  const dy = (e.clientY - dragStartY) / scale;
+  
+  const ox = dragInitOffX + dx;
+  const oy = dragInitOffY + dy;
+  
+  if (dragTarget === 'front') {
+    c.imageOffsetX = ox;
+    c.imageOffsetY = oy;
+  } else {
+    c.backImageOffsetX = ox;
+    c.backImageOffsetY = oy;
+  }
+  
+  applyImageTransform(dragTarget);
+}
+
+function onImageDragEnd() {
+  if (!isDragging) return;
+  isDragging = false;
+  
+  const wrap = getWrap(dragTarget);
+  if (wrap) wrap.classList.remove('dragging');
+  
+  document.removeEventListener('mousemove', onImageDrag);
+  document.removeEventListener('mouseup', onImageDragEnd);
+  save();
+}
+
+// Apply transform to the wrapper div (no re-render needed)
+function applyImageTransform(target) {
+  const c = cc();
+  const wrap = getWrap(target);
+  if (!wrap) return;
+  
+  let zoom, ox, oy;
+  if (target === 'front') {
+    zoom = c.imageZoom || 100;
+    ox = c.imageOffsetX || 0;
+    oy = c.imageOffsetY || 0;
+  } else {
+    zoom = c.backImageZoom || 100;
+    ox = c.backImageOffsetX || 0;
+    oy = c.backImageOffsetY || 0;
+  }
+  
+  wrap.style.transform = `scale(${zoom/100}) translate(${ox}px, ${oy}px)`;
+}
+
+function setImageZoom(target, value) {
+  const c = cc();
+  const zoom = Math.round(parseFloat(value));
+  
+  if (target === 'front') {
+    c.imageZoom = zoom;
+  } else {
+    c.backImageZoom = zoom;
+  }
+  
+  applyImageTransform(target);
+  
+  // Update label without re-render
+  const lbl = document.getElementById(target === 'front' ? 'frontZoomLbl' : 'backZoomLbl');
+  if (lbl) lbl.textContent = zoom + '%';
+  
+  save();
+}
+
+function adjustImageZoom(target, delta) {
+  const c = cc();
+  const cur = target === 'front' ? (c.imageZoom || 100) : (c.backImageZoom || 100);
+  const nz = Math.max(20, Math.min(250, cur + delta));
+  
+  // Update slider
+  const area = document.getElementById(target === 'front' ? 'frontImageArea' : 'backImageArea');
+  if (area) {
+    const slider = area.querySelector('input[type="range"]');
+    if (slider) slider.value = nz;
+  }
+  
+  setImageZoom(target, nz);
+}
+
+function resetImagePosition(target) {
+  const c = cc();
+  if (target === 'front') {
+    c.imageZoom = 100;
+    c.imageOffsetX = 0;
+    c.imageOffsetY = 0;
+  } else {
+    c.backImageZoom = 100;
+    c.backImageOffsetX = 0;
+    c.backImageOffsetY = 0;
+  }
+  renderCardPreview();
+  save();
+}
+
+// Scroll-wheel zoom on image areas
+document.addEventListener('wheel', (e) => {
+  const frontArea = e.target.closest('#frontImageArea');
+  const backArea = e.target.closest('#backImageArea');
+  
+  if (frontArea && cc().imageUrl) {
+    e.preventDefault();
+    adjustImageZoom('front', e.deltaY > 0 ? -5 : 5);
+  } else if (backArea && cc().backImageUrl) {
+    e.preventDefault();
+    adjustImageZoom('back', e.deltaY > 0 ? -5 : 5);
+  }
+}, { passive: false });
+
+// ─── UTILITY ───
+function escHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─── KEYBOARD ───
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'p') { e.preventDefault(); doPrint(); }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); save(); }
+  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); addCard(); }
+});
+</script>
+</body>
+</html>
